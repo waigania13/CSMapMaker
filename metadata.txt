@@ -1,0 +1,38 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=CSMapMaker
+qgisMinimumVersion=2.0
+description=Make CS topographic map represents valleys by blueish color and ridges by reddish color
+version=0.1
+author=Kosuke ASAHI
+email=waigania13@gmail.com
+
+about=CSMapMaker make CS topographic map from terrain raster layer. CS toporographic is made from elevation, curvature and slope. The CS topographic map provides us with many information about distribution of micro-relief in mountain area, and it may be a prominent tool for evaluating landslide susceptibility.
+
+tracker=https://github.com/waigania13/CSMapMaker/issues
+repository=https://github.com/waigania13/CSMapMaker
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=raster,terrain
+
+homepage=https://github.com/waigania13/CSMapMaker
+category=Raster
+icon=images/icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
