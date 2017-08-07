@@ -24,7 +24,7 @@ class CSMapMake:
         
     def csmapMake(self, dem, curvature_method, gaussian_params, to_file=False, outdir=None, batch_mode=False):
         if type(dem) == str or type(dem) == unicode:
-            dem_layer = processing.load(dem)
+            dem_layer = self.iface.addRasterLayer(dem, "DEM")
             self.temp_layers.append(dem_layer)
         else:
             dem_layer = dem
@@ -36,20 +36,20 @@ class CSMapMake:
 
         legend = self.iface.legendInterface()
 
-        gaussian_layer = processing.load(gaussian["RESULT"])
+        gaussian_layer = self.iface.addRasterLayer(gaussian["RESULT"], "GAUSSIAN_RESULT")
         self.temp_layers.append(gaussian_layer)
         legend.setLayerVisible(gaussian_layer, False)
 
-        curvature_layer = processing.load(result[curvature_method[0]])
+        curvature_layer = self.iface.addRasterLayer(result[curvature_method[0]], curvature_method[0])
         self.temp_layers.append(curvature_layer)
 
-        slope_layer = processing.load(dem_result["SLOPE"])
+        slope_layer = self.iface.addRasterLayer(dem_result["SLOPE"], "SLOPE")
         self.temp_layers.append(slope_layer)
 
-        curvature_layer2 = processing.load(result[curvature_method[7]])
+        curvature_layer2 = self.iface.addRasterLayer(result[curvature_method[7]], curvature_method[7])
         self.temp_layers.append(curvature_layer2)
 
-        slope_layer2 = processing.load(dem_result["SLOPE"])
+        slope_layer2 = self.iface.addRasterLayer(dem_result["SLOPE"], "SLOPE")
         self.temp_layers.append(slope_layer2)
 
         self._setLayerStyle(curvature_layer, 
