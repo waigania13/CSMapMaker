@@ -29,10 +29,14 @@ class CSMapMake:
         else:
             dem_layer = dem
 
-        dem_result = processing.runalg("saga:slopeaspectcurvature", dem_layer,  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
-
-        gaussian = processing.runalg("saga:gaussianfilter", dem, gaussian_params[0], 1, gaussian_params[1], None)
-        result = processing.runalg("saga:slopeaspectcurvature", gaussian["RESULT"],  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
+        if QGis.QGIS_VERSION_INT >= 21813:
+            dem_result = processing.runalg("saga:slopeaspectcurvature", dem_layer,  6, 0, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
+            gaussian = processing.runalg("saga:gaussianfilter", dem, gaussian_params[0], 1, gaussian_params[1], 0, None)
+            result = processing.runalg("saga:slopeaspectcurvature", gaussian["RESULT"],  6, 0, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
+        else:
+            dem_result = processing.runalg("saga:slopeaspectcurvature", dem_layer,  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
+            gaussian = processing.runalg("saga:gaussianfilter", dem, gaussian_params[0], 1, gaussian_params[1], None)
+            result = processing.runalg("saga:slopeaspectcurvature", gaussian["RESULT"],  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
 
         legend = self.iface.legendInterface()
 
