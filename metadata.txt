@@ -10,7 +10,7 @@
 name=CSMapMaker
 qgisMinimumVersion=3.2
 description=Make CS topographic map represents valleys by blueish color and ridges by reddish color
-version=0.3
+version=0.4
 author=Kosuke ASAHI
 email=waigania13@gmail.com
 
