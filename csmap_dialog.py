@@ -20,16 +20,18 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import absolute_import
 
 import os
 
-from PyQt4 import QtGui, uic
-from csmap_dialog_base import Ui_CSMapDialogBase
+from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt.QtGui import QIcon, QPalette, QColor
+from .csmap_dialog_base import Ui_CSMapDialogBase
 #FORM_CLASS, _ = uic.loadUiType(os.path.join(
 #    os.path.dirname(__file__), 'csmap_dialog_base.ui'))
 
 
-class CSMapDialog(QtGui.QDialog, Ui_CSMapDialogBase):
+class CSMapDialog(QtWidgets.QDialog, Ui_CSMapDialogBase):
     def __init__(self, parent=None):
         """Constructor."""
         super(CSMapDialog, self).__init__(parent)
@@ -44,23 +46,23 @@ class CSMapDialog(QtGui.QDialog, Ui_CSMapDialogBase):
         pass
 
     def input_folder_action(self):
-        dialog = QtGui.QFileDialog(self)
-        dialog.setFileMode(QtGui.QFileDialog.Directory)
-        dialog.setOption(QtGui.QFileDialog.ShowDirsOnly, True)
+        dialog = QtWidgets.QFileDialog(self)
+        dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+        dialog.setOption(QtWidgets.QFileDialog.ShowDirsOnly, True)
 
         if dialog.exec_():
             self.input_folder_edit.setText(dialog.selectedFiles()[0])
             pal = self.input_folder_edit.palette()
-            pal.setColor(QtGui.QPalette.Base, QtGui.QColor("white"))
+            pal.setColor(QPalette.Base, QColor("white"))
             self.input_folder_edit.setPalette(pal)
 
     def output_folder_action(self):
-        dialog = QtGui.QFileDialog(self)
-        dialog.setFileMode(QtGui.QFileDialog.Directory)
-        dialog.setOption(QtGui.QFileDialog.ShowDirsOnly, True)
+        dialog = QtWidgets.QFileDialog(self)
+        dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+        dialog.setOption(QtWidgets.QFileDialog.ShowDirsOnly, True)
 
         if dialog.exec_():
             self.output_folder_edit.setText(dialog.selectedFiles()[0])
             pal = self.output_folder_edit.palette()
-            pal.setColor(QtGui.QPalette.Base, QtGui.QColor("white"))
+            pal.setColor(QPalette.Base, QColor("white"))
             self.output_folder_edit.setPalette(pal)

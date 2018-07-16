@@ -20,17 +20,20 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon, QMessageBox, QPalette, QColor
+from __future__ import absolute_import
+from builtins import object
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtGui import QIcon, QPalette, QColor
 # Initialize Qt resources from file resources.py
-import resources
+from . import resources
 # Import the code for the dialog
-from csmap_dialog import CSMapDialog
+from .csmap_dialog import CSMapDialog
 import os
-from csmap_make import CSMapMake
+from .csmap_make import CSMapMake
 
 
-class CSMap:
+class CSMap(object):
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):

@@ -1,13 +1,18 @@
+from builtins import str
+from builtins import range
+from builtins import object
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt import QtCore, QtGui
 from qgis.core import *
 from qgis.utils import *
+from qgis.gui import *
 from osgeo import gdal, osr
 import processing
 import tempfile
 
-class CSMapMake:
+from qgis.PyQt.QtWidgets import QMessageBox
+
+class CSMapMake(object):
     def __init__(self, iface):
         self.iface = iface
         self.result_files = []
@@ -15,34 +20,35 @@ class CSMapMake:
 
     def clearLayers(self):
         for l in self.temp_layers:
-            QgsMapLayerRegistry.instance().removeMapLayer(l)
+            QgsProject.instance().removeMapLayer(l)
         self.temp_layers = []
 
     def loadResultFiles(self):
         for r in self.result_files:
-            processing.load(r)
+            self.iface.addRasterLayer(r, r)
         
+    def _getTempFileName(self, file_name):
+        return processing.getTempDirInTempFolder()+r'/'+file_name
+
     def csmapMake(self, dem, curvature_method, gaussian_params, to_file=False, outdir=None, batch_mode=False):
-        if type(dem) == str or type(dem) == unicode:
-            dem_layer = self.iface.addRasterLayer(dem, "DEM")
+        if type(dem) is str:
+            dem_layer = QgsRasterLayer(dem, "DEM")
+            QgsProject.instance().addMapLayer(dem_layer, False)
             self.temp_layers.append(dem_layer)
         else:
             dem_layer = dem
 
-        if QGis.QGIS_VERSION_INT >= 21813:
-            dem_result = processing.runalg("saga:slopeaspectcurvature", dem_layer,  6, 0, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
-            gaussian = processing.runalg("saga:gaussianfilter", dem, gaussian_params[0], 1, gaussian_params[1], 0, None)
-            result = processing.runalg("saga:slopeaspectcurvature", gaussian["RESULT"],  6, 0, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
-        else:
-            dem_result = processing.runalg("saga:slopeaspectcurvature", dem_layer,  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
-            gaussian = processing.runalg("saga:gaussianfilter", dem, gaussian_params[0], 1, gaussian_params[1], None)
-            result = processing.runalg("saga:slopeaspectcurvature", gaussian["RESULT"],  6, 0, 0, None, None, None, None, None, None,None, None, None, None, None, None)
+        options = {"ELEVATION":dem_layer, "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
+        dem_result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback())
 
-        legend = self.iface.legendInterface()
+        gaussian = processing.run("saga:gaussianfilter", {"INPUT":dem_layer, "SIGMA":gaussian_params[0], "MODE":1, "RADIUS":gaussian_params[1], "RESULT":self._getTempFileName("RESULT.sdat")}, feedback= QgsProcessingFeedback())
+
+        options = {"ELEVATION":QgsRasterLayer(gaussian["RESULT"]), "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
+        result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback()) 
 
         gaussian_layer = self.iface.addRasterLayer(gaussian["RESULT"], "GAUSSIAN_RESULT")
         self.temp_layers.append(gaussian_layer)
-        legend.setLayerVisible(gaussian_layer, False)
+        QgsProject.instance().layerTreeRoot().findLayer(gaussian_layer).setItemVisibilityChecked(False)
 
         curvature_layer = self.iface.addRasterLayer(result[curvature_method[0]], curvature_method[0])
         self.temp_layers.append(curvature_layer)
@@ -78,7 +84,7 @@ class CSMapMake:
             self._setLayerStyle(slope_layer2, "WhiteToBlack", 2, False, 0.5)
 
         if to_file and outdir is not None:
-            self._csmapToFile(dem_layer, [slope_layer2.id(), curvature_layer2.id(), slope_layer.id(), curvature_layer.id(), dem_layer.id()], outdir)
+            self._csmapToFile(dem_layer, [slope_layer2, curvature_layer2, slope_layer, curvature_layer, dem_layer], outdir)
 
     def _setLayerStyle(self, layer, color_name, rank, reverse, opa=1.0, min=None, max=None):
         if min is None or max is None:
@@ -89,7 +95,7 @@ class CSMapMake:
         sa = (max - min)/rank
     
         if color_name == 'WhiteToBlack':
-            lst =  [ QgsColorRampShader.ColorRampItem(min, QColor(255,255,255), str(round(min,3))), QgsColorRampShader.ColorRampItem(max, QColor(0,0,0), str(round(max,3))) ]
+            lst =  [ QgsColorRampShader.ColorRampItem(min, QtGui.QColor(255,255,255), str(round(min,3))), QgsColorRampShader.ColorRampItem(max, QtGui.QColor(0,0,0), str(round(max,3))) ]
         else :
             lst = []
             for i in range(rank):
@@ -100,7 +106,7 @@ class CSMapMake:
         myColorRamp = QgsColorRampShader()
 
         myColorRamp.setColorRampItemList(lst)
-        myColorRamp.setColorRampType(QgsColorRampShader.INTERPOLATED)
+        myColorRamp.setColorRampType(QgsColorRampShader.Interpolated)
         myRasterShader.setRasterShaderFunction(myColorRamp)
 
         myPseudoRenderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), layer.type(),  myRasterShader)
@@ -108,29 +114,42 @@ class CSMapMake:
         layer.setRenderer(myPseudoRenderer)
         layer.renderer().setOpacity(opa)
 
-        layer.triggerRepaint()
-        self.iface.legendInterface().refreshLayerSymbology(layer)
-
     def _csmapToFile(self, dem, layer_set, outdir): 
-        dp = dem.dataProvider()
-        img = QImage(QSize(dp.xSize(), dp.ySize()), QImage.Format_ARGB32_Premultiplied)
-        color = QColor(255, 255, 255)
+
+        if dem.rasterUnitsPerPixelX() == dem.rasterUnitsPerPixelY():
+            dx = dem.rasterUnitsPerPixelX()
+            dy = dem.rasterUnitsPerPixelY()
+            w = dem.dataProvider().xSize()
+            h = dem.dataProvider().ySize()
+        elif dem.rasterUnitsPerPixelX() > dem.rasterUnitsPerPixelY():
+            dx = dem.rasterUnitsPerPixelY()
+            dy = dem.rasterUnitsPerPixelY()
+            w = int(dem.dataProvider().xSize() * (dem.rasterUnitsPerPixelX() / dem.rasterUnitsPerPixelY()))
+            h = dem.dataProvider().ySize()
+        else:
+            dx = dem.rasterUnitsPerPixelX()
+            dy = dem.rasterUnitsPerPixelX()
+            w = dem.dataProvider().xSize()
+            h = int(dem.dataProvider().ySize() * (dem.rasterUnitsPerPixelY() / dem.rasterUnitsPerPixelX()))
+
+        img = QtGui.QImage(QtCore.QSize(w, h), QtGui.QImage.Format_ARGB32_Premultiplied)
+        color = QtGui.QColor(255, 255, 255)
         img.fill(color.rgb())
 
-        p = QPainter()
+        setting = QgsMapSettings()
+        setting.setExtent(dem.dataProvider().extent())
+        setting.setDestinationCrs(dem.crs())
+        setting.setOutputSize(QtCore.QSize(w, h))
+        setting.setLayers(layer_set)
+        setting.updateDerived()
+
+        p = QtGui.QPainter()
         p.begin(img)
 
-        render = QgsMapRenderer()
-        render.setDestinationCrs(dem.crs())
-        render.setProjectionsEnabled(True)
+        render = QgsMapRendererCustomPainterJob(setting, p)
 
-        render.setLayerSet(layer_set)
-
-        rect = QgsRectangle(render.fullExtent())
-        render.setExtent(rect)
-
-        render.setOutputSize(img.size(), img.logicalDpiX())
-        render.render(p)
+        render.start()
+        render.waitForFinished()
 
         p.end()
 
@@ -140,11 +159,11 @@ class CSMapMake:
         src_ds = gdal.Open(temp.name+".tif")
         driver = gdal.GetDriverByName("GTiff")
 
-        filepath, filename = os.path.split(str(dp.dataSourceUri()))
+        filepath, filename = os.path.split(str(dem.dataProvider().dataSourceUri()))
 
         dst_file = outdir+r"/csmap_"+filename
         dst_ds = driver.CreateCopy(dst_file, src_ds, 0)
-        geo_trans = [rect.xMinimum(), dem.rasterUnitsPerPixelX(), 0, rect.yMaximum(), 0, dem.rasterUnitsPerPixelY()*-1]
+        geo_trans = [dem.dataProvider().extent().xMinimum(), dx, 0, dem.dataProvider().extent().yMaximum(), 0, dy*-1]
         dst_ds.SetGeoTransform(geo_trans)
         dst_ds.SetProjection(str(dem.crs().toWkt()))
 

@@ -1,5 +1,7 @@
 # CSMapMaker plugin 
 
+[Corresponding to QGIS v2.x is here](https://github.com/waigania13/CSMapMaker/tree/qgis2.x)
+
 CS topographic map which is made from elevation, curvature and slope. CS topographic map represents valleys by blueish color and ridges by reddish color.
 
 ![result](images/result_csmap.png)
@@ -29,8 +31,9 @@ Copyright (c) 2017 Kosuke ASAHI
 
 # CS立体図作成 QGISプラグイン
 QGISで、長野県林業総合センター 戸田さまが開発したCS立体図を作成するためのプラグインです　　
+QGIS v2.x で使用する場合は、[こちらからダウンロードしてください](https://github.com/waigania13/CSMapMaker/tree/qgis2.x)
 
 - zipでダウンロード
-- 解凍後のディレクトリを丸ごと、ユーザディレクトリ/.qgis2/python/pluginsにコピー
+- 解凍後のディレクトリを丸ごと、ユーザディレクトリ/AppData\Roaming\QGIS\QGIS3\profiles\default\python\pluginsにコピー
 - QGISを起動してプラグインを有効にすると、メニューの「ラスタ」に「csmap」が入ります 
 - 実行して、ラスタレイヤを選択して「OK」をクリックすると一式計算します 
