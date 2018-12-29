@@ -26,11 +26,13 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.PyQt.QtGui import QIcon, QPalette, QColor
 # Initialize Qt resources from file resources.py
+from qgis.core import QgsApplication 
 from . import resources
 # Import the code for the dialog
 from .csmap_dialog import CSMapDialog
 import os
 from .csmap_make import CSMapMake
+import processing
 
 
 class CSMap(object):
@@ -277,10 +279,17 @@ class CSMap(object):
 
             for f in os.listdir(input_dir):
                 r,e = os.path.splitext(f)
-                if e.lower() != ".tif" and e.lower() != ".tiff":
+                if e.lower() not in (".tif", ".tiff", ".las"):
                     continue
+										
+                if e.lower() == ".las":
+                    input_file = self._convert_las_to_tiff(input_dir, f)
+                    if input_file is None:
+                        continue
+                else:
+                    input_file = input_dir+"/"+f
 
-                csmap_maker.csmapMake(input_dir+"/"+f, curvature_method, [param_standard, param_radius], True, output_dir, True)
+                csmap_maker.csmapMake(input_file, curvature_method, [param_standard, param_radius], True, output_dir, True)
                 csmap_maker.clearLayers()
 
             if self.dlg.load_flg.isChecked():
@@ -320,3 +329,32 @@ class CSMap(object):
             elif ctext == 'Flow Line Curvature':
                 curvature_method = ['C_ROTO', 'Blues', 9, True, 0.5, -0.2, 0.2, 'C_ROTO', 'RdBu', 9, True, 0.5, -0.2, 0.2]
         return curvature_method
+			
+    def _convert_las_to_tiff(self, dir, file):
+        if self._check_lastools() == False:
+            return None
+				
+        input_file = dir+"/"+file
+        r,e = os.path.splitext(file)
+				
+        output_file = processing.getTempDirInTempFolder()+r'/'+r+r".tif"				
+				
+        processing.run("LAStools:las2dem", {
+           "VERBOSE": True,
+           "GUI":False,
+           "STEP": 1.0,
+           "INPUT_LASLAZ": input_file,
+           "PRODUCT": 0,
+           "ATTRIBUTE": 0,
+           "OUTPUT_RASTER": output_file
+          })
+				
+        return output_file
+			
+    def _check_lastools(self):
+        flag = False
+        for a in QgsApplication.processingRegistry().providers():
+            if a.name() == "LAStools":
+                flag = True
+                break
+        return flag
