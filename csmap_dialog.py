@@ -26,12 +26,11 @@ import os
 
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtGui import QIcon, QPalette, QColor
-from .csmap_dialog_base import Ui_CSMapDialogBase
-#FORM_CLASS, _ = uic.loadUiType(os.path.join(
-#    os.path.dirname(__file__), 'csmap_dialog_base.ui'))
+#from .csmap_dialog_base import Ui_CSMapDialogBase
+FORM_CLASS, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'csmap_dialog_base.ui'))
 
-
-class CSMapDialog(QtWidgets.QDialog, Ui_CSMapDialogBase):
+class CSMapDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(CSMapDialog, self).__init__(parent)

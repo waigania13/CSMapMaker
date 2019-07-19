@@ -13,8 +13,9 @@ import tempfile
 from qgis.PyQt.QtWidgets import QMessageBox
 
 class CSMapMake(object):
-    def __init__(self, iface):
+    def __init__(self, iface, progressBar):
         self.iface = iface
+        self.progressBar = progressBar
         self.result_files = []
         self.temp_layers = []
 
@@ -30,7 +31,7 @@ class CSMapMake(object):
     def _getTempFileName(self, file_name):
         return processing.getTempDirInTempFolder()+r'/'+file_name
 
-    def csmapMake(self, dem, curvature_method, gaussian_params, to_file=False, outdir=None, batch_mode=False):
+    def csmapMake(self, dem, curvature_method, gaussian_params, progress_val, progress_step, to_file=False, outdir=None, batch_mode=False):
         if type(dem) is str:
             dem_layer = QgsRasterLayer(dem, "DEM")
             QgsProject.instance().addMapLayer(dem_layer, False)
@@ -40,11 +41,23 @@ class CSMapMake(object):
 
         options = {"ELEVATION":dem_layer, "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
         dem_result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback())
+				
+        QtCore.QCoreApplication.processEvents() 
+        progress_val = progress_val + progress_step
+        self.progressBar.setValue(progress_val)
 
         gaussian = processing.run("saga:gaussianfilter", {"INPUT":dem_layer, "SIGMA":gaussian_params[0], "MODE":1, "RADIUS":gaussian_params[1], "RESULT":self._getTempFileName("RESULT.sdat")}, feedback= QgsProcessingFeedback())
+				
+        QtCore.QCoreApplication.processEvents() 
+        progress_val = progress_val + progress_step
+        self.progressBar.setValue(progress_val)
 
         options = {"ELEVATION":QgsRasterLayer(gaussian["RESULT"]), "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
         result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback()) 
+				
+        QtCore.QCoreApplication.processEvents() 
+        progress_val = progress_val + progress_step
+        self.progressBar.setValue(progress_val)
 
         gaussian_layer = self.iface.addRasterLayer(gaussian["RESULT"], "GAUSSIAN_RESULT")
         self.temp_layers.append(gaussian_layer)
@@ -85,6 +98,7 @@ class CSMapMake(object):
 
         if to_file and outdir is not None:
             self._csmapToFile(dem_layer, [slope_layer2, curvature_layer2, slope_layer, curvature_layer, dem_layer], outdir)
+        return progress_val
 
     def _setLayerStyle(self, layer, color_name, rank, reverse, opa=1.0, min=None, max=None):
         if min is None or max is None:

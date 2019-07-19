@@ -215,6 +215,7 @@ class CSMap(object):
 
         # show the dialog
         self.dlg.show()
+        self.dlg.progressBar.hide()
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
@@ -244,6 +245,7 @@ class CSMap(object):
 
         # show the dialog
         self.dlg.show()
+        self.dlg.progressBar.hide()
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
@@ -258,8 +260,13 @@ class CSMap(object):
         param_radius = self.dlg.param_radius.value()
         curvature_method = self.get_curvature_method(mode, self.dlg.curvature_box.currentText())
 
-        csmap_maker = CSMapMake(self.iface)
+        csmap_maker = CSMapMake(self.iface, self.dlg.progressBar)
 
+        progress_val = 1
+        progress_step = 33
+        self.dlg.progressBar.show()
+        self.dlg.progressBar.setValue(progress_val)
+				
         if self.csmap_process == self.csmap_batch_process:
             input_dir = self.dlg.input_folder_edit.text()
             if len(input_dir) == 0:
@@ -275,12 +282,18 @@ class CSMap(object):
                 self.dlg.output_folder_edit.setPalette(pal)
                 return
 
+            file_count = 0
             for f in os.listdir(input_dir):
                 r,e = os.path.splitext(f)
                 if e.lower() != ".tif" and e.lower() != ".tiff":
                     continue
+                file_count = file_count + 1
 
-                csmap_maker.csmapMake(input_dir+"/"+f, curvature_method, [param_standard, param_radius], True, output_dir, True)
+            for f in os.listdir(input_dir):
+                r,e = os.path.splitext(f)
+                if e.lower() != ".tif" and e.lower() != ".tiff":
+                    continue
+                progress_val = csmap_maker.csmapMake(input_dir+"/"+f, curvature_method, [param_standard, param_radius], progress_val, progress_step/file_count, True, output_dir, True)
                 csmap_maker.clearLayers()
 
             if self.dlg.load_flg.isChecked():
@@ -291,7 +304,9 @@ class CSMap(object):
             if layer is None:
                 return
 
-            csmap_maker.csmapMake(layer, curvature_method, [param_standard, param_radius])
+            csmap_maker.csmapMake(layer, curvature_method, [param_standard, param_radius], progress_val, progress_step)
+						
+        self.dlg.progressBar.setValue(100)
 
     def get_curvature_method(self, mode, ctext):
         #Plan+General Mode

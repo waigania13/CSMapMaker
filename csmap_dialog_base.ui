@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>411</width>
-    <height>405</height>
+    <height>471</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>370</y>
+     <y>430</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -335,6 +335,19 @@
     <bool>false</bool>
    </property>
   </widget>
+  <widget class="QProgressBar" name="progressBar">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>400</y>
+     <width>371</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>0</number>
+   </property>
+  </widget>
   <zorder>groupBox</zorder>
   <zorder>button_box</zorder>
   <zorder>demlayer_box</zorder>
@@ -355,17 +368,18 @@
   <zorder>input_folder_label</zorder>
   <zorder>input_folder_select</zorder>
   <zorder>input_folder_edit</zorder>
+  <zorder>progressBar</zorder>
  </widget>
  <customwidgets>
   <customwidget>
    <class>QgsMapLayerComboBox</class>
    <extends>QComboBox</extends>
-   <header>qgis.gui</header>
+   <header>qgsmaplayercombobox.h</header>
   </customwidget>
   <customwidget>
    <class>QgsSpinBox</class>
    <extends>QSpinBox</extends>
-   <header>qgis.gui</header>
+   <header>qgsspinbox.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
