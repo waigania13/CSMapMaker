@@ -9,6 +9,7 @@ from qgis.gui import *
 from osgeo import gdal, osr
 import processing
 import tempfile
+import uuid
 
 from qgis.PyQt.QtWidgets import QMessageBox
 
@@ -29,7 +30,14 @@ class CSMapMake(object):
             self.iface.addRasterLayer(r, r)
         
     def _getTempFileName(self, file_name):
-        return processing.getTempDirInTempFolder()+r'/'+file_name
+        # processing.getTempDirInTempFolder() was removed in QGIS 3.26
+        # https://github.com/qgis/QGIS/commit/b752d561862a7769f6c1c8122607611382ba9b0d
+        # Add code that was defined in the deleted function.
+        # https://github.com/waigania13/CSMapMaker/issues/9
+        dir_name = QgsProcessingUtils.tempFolder()
+        dir_name = os.path.join(dir_name, uuid.uuid4().hex)
+        os.makedirs(dir_name.strip('\n\r '), exist_ok=True)
+        return dir_name+r'/'+file_name
 
     def csmapMake(self, dem, curvature_method, gaussian_params, progress_val, progress_step, to_file=False, outdir=None, batch_mode=False):
         if type(dem) is str:
