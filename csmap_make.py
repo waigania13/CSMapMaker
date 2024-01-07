@@ -31,7 +31,25 @@ class CSMapMake(object):
     def _getTempFileName(self, file_name):
         return processing.getTempDirInTempFolder()+r'/'+file_name
 
+    def _isEnabledSaga(self, sagang=False):
+        algs_prefix = 'sagang:' if sagang else 'saga:'
+        try:
+            processing.run(algs_prefix+"gdalformats", {'FORMATS':'TEMPORARY_OUTPUT','TYPE':2,'ACCESS':2,'RECOGNIZED':True})
+        except QgsProcessingException:
+            return False
+        else:
+            return True
+
     def csmapMake(self, dem, curvature_method, gaussian_params, progress_val, progress_step, to_file=False, outdir=None, batch_mode=False):
+        # Support for SAGA Next Gen Provider plugin in QGIS 3.30 or newer
+        # https://github.com/waigania13/CSMapMaker/issues/11
+        if self._isEnabledSaga(True):
+            algs_prefix = 'sagang:'
+        elif self._isEnabledSaga(False):
+            algs_prefix = 'saga:'
+        else:
+            raise QgsProcessingException("SAGA Provider or SAGA Next Gen Provider plugin is disabled.")
+
         if type(dem) is str:
             dem_layer = QgsRasterLayer(dem, "DEM")
             QgsProject.instance().addMapLayer(dem_layer, False)
@@ -40,20 +58,20 @@ class CSMapMake(object):
             dem_layer = dem
 
         options = {"ELEVATION":dem_layer, "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
-        dem_result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback())
+        dem_result = processing.run(algs_prefix+"slopeaspectcurvature", options, feedback= QgsProcessingFeedback())
 				
         QtCore.QCoreApplication.processEvents() 
         progress_val = progress_val + progress_step
         self.progressBar.setValue(progress_val)
 
-        gaussian = processing.run("saga:gaussianfilter", {"INPUT":dem_layer, "SIGMA":gaussian_params[0], "MODE":1, "RADIUS":gaussian_params[1], "RESULT":self._getTempFileName("RESULT.sdat")}, feedback= QgsProcessingFeedback())
+        gaussian = processing.run(algs_prefix+"gaussianfilter", {"INPUT":dem_layer, "SIGMA":gaussian_params[0], "MODE":1, "RADIUS":gaussian_params[1], "RESULT":self._getTempFileName("RESULT.sdat")}, feedback= QgsProcessingFeedback())
 				
         QtCore.QCoreApplication.processEvents() 
         progress_val = progress_val + progress_step
         self.progressBar.setValue(progress_val)
 
         options = {"ELEVATION":QgsRasterLayer(gaussian["RESULT"]), "METHOD":6, "UNIT_SLOPE":0, "UNIT_ASPECT":0, "SLOPE":self._getTempFileName("SLOPE.sdat"), "ASPECT":self._getTempFileName("ASPECT.sdat"), "C_GENE":self._getTempFileName("C_GENE.sdat"), "C_PLAN":self._getTempFileName("C_PLAN.sdat"), "C_PROF":self._getTempFileName("C_PROF.sdat"), "C_TANG":self._getTempFileName("C_TANG.sdat"), "C_LONG":self._getTempFileName("C_LONG.sdat"), "C_CROS":self._getTempFileName("C_CROS.sdat"), "C_MINI":self._getTempFileName("C_MINI.sdat"), "C_MAXI":self._getTempFileName("C_MAXI.sdat"), "C_TOTA":self._getTempFileName("C_TOTA.sdat"), "C_ROTO":self._getTempFileName("C_ROTO.sdat")}
-        result = processing.run("saga:slopeaspectcurvature", options, feedback= QgsProcessingFeedback()) 
+        result = processing.run(algs_prefix+"slopeaspectcurvature", options, feedback= QgsProcessingFeedback()) 
 				
         QtCore.QCoreApplication.processEvents() 
         progress_val = progress_val + progress_step
