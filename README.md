@@ -1,5 +1,6 @@
-# CSMapMaker plugin 
+**[QGIS 3.30以降では、csmap-pluginをお使いください](https://github.com/MIERUNE/csmap-qgis-plugin)**
 
+# CSMapMaker plugin 
 [Corresponding to QGIS v2.x is here](https://github.com/waigania13/CSMapMaker/tree/qgis2.x)
 
 CS topographic map which is made from elevation, curvature and slope. CS topographic map represents valleys by blueish color and ridges by reddish color.
